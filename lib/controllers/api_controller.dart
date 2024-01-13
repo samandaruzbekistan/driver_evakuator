@@ -94,41 +94,6 @@ class ApiController {
     return -1;
   }
 
-  Future<int> UpdatePassword({required String phone, required String password}) async {
-    var headers = {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer eXB4ZXZha3VhdG9ycGFzc3dvcmQ='
-    };
-    var request = http.Request('POST', Uri.parse('http://94.241.168.135:3000/api/v1/mobile'));
-    request.body = json.encode({
-      "jsonrpc": "2.0",
-      "apiversion": "1.0",
-      "params": {
-        "method": "UpdatePassword",
-        "body": {
-          "phonenumber": phone,
-          "newpassword": password
-        }
-      }
-    });
-    request.headers.addAll(headers);
-
-    http.StreamedResponse response = await request.send();
-    if(response.statusCode == 200){
-      var res = await response.stream.bytesToString();
-      Map valueMap = json.decode(res);
-      print(valueMap);
-      if(valueMap['success'] == true){
-        return 1;
-      }
-      else{
-        return 0;
-      }
-    }
-    else{
-      return 0;
-    }
-  }
 
   Future<int?> checkCode(String code) async {
     var headers = {
@@ -141,9 +106,10 @@ class ApiController {
       var phone = box.get('temp_phone');
       var region_name = box.get('temp_region_name');
       var region_id = box.get('temp_region_id');
-      var data = box.get('temp_data');
+      var data = box.get('temp_driverdata');
+      var carnumber = box.get('temp_carnumber');
       var request_fcm = http.Request(
-          'POST', Uri.parse('http://94.241.168.135:6000/ypx/api/v1/mobile'));
+          'POST', Uri.parse('http://94.241.168.135:9000/api/v1/mobile'));
       var fcm;
       fcm = await FirebaseApi().getFCMToken();
       request_fcm.body = json.encode({
@@ -169,6 +135,7 @@ class ApiController {
         box.put('region_name', region_name);
         box.put('region_id', region_id);
         box.put('data', data);
+        box.put('carnumber', carnumber);
         return 1;
       }
       else{
@@ -185,7 +152,7 @@ class ApiController {
       'Content-Type': 'application/json',
       'Authorization': 'Bearer eXB4ZXZha3VhdG9ycGFzc3dvcmQ='
     };
-    var loginRequest = http.Request('POST', Uri.parse('http://94.241.168.135:6000/ypx/api/v1/mobile'));
+    var loginRequest = http.Request('POST', Uri.parse('http://94.241.168.135:9000/api/v1/mobile'));
     loginRequest.body = json.encode({
       "jsonrpc": "2.0",
       "apiversion": "1.0",
@@ -212,7 +179,8 @@ class ApiController {
         box.put('temp_name', valueMap['message']['username']);
         box.put('temp_region_name', valueMap['message']['location']);
         box.put('temp_region_id', valueMap['message']['location_id']);
-        box.put('temp_data', valueMap['message']['data']);
+        box.put('temp_carnumber', valueMap['message']['carnumber']);
+        box.put('temp_driverdata', valueMap['message']['driverdata']);
         var request = http.Request('POST', Uri.parse("http://94.241.168.135:3000/api/v1/mobile"));
         request.body = json.encode({
           "jsonrpc": "2.0",
@@ -244,38 +212,6 @@ class ApiController {
     }
   }
 
-  Future<int?> CheckUser({required String phone}) async {
-    var headers = {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer eXB4ZXZha3VhdG9ycGFzc3dvcmQ='
-    };
-    var request = http.Request('POST', Uri.parse("http://94.241.168.135:3000/api/v1/mobile"));
-    request.body = json.encode({
-      "jsonrpc": "2.0",
-      "apiversion": "1.0",
-      "params": {
-        "method": "CheckUsers",
-        "body": {
-          "phonenumber": phone
-        }
-      }
-    });
-    request.headers.addAll(headers);
-    http.StreamedResponse response = await request.send();
-    if(response.statusCode == 200){
-      var res = await response.stream.bytesToString();
-      Map valueMap = json.decode(res);
-      if(valueMap['success'] == false){
-        return 0;
-      }
-      else{
-        return 1;
-      }
-    }
-    else{
-      return 0;
-    }
-  }
 
   Future<int> sendCodeSms({required String phone}) async {
     final fourDigitNumber = random.nextInt(9000) + 1000;

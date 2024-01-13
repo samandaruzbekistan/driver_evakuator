@@ -23,6 +23,8 @@ class _MyProfileState extends State<MyProfile> {
 
     TextEditingController descriptionController = TextEditingController()
       ..text = "${box.get('data')}";
+    TextEditingController carNumberController = TextEditingController()
+      ..text = "${box.get('carnumber')}";
 
     return Scaffold(
       appBar: AppBar(
@@ -55,7 +57,7 @@ class _MyProfileState extends State<MyProfile> {
                 readOnly: true,
                 controller: nameController,
                 decoration:const InputDecoration(
-                  label:  Text("F.I.Sh"),
+                  label:  Text("Xaydovchi"),
                   suffixIcon: Icon(Icons.person_outline_rounded),
                   border: OutlineInputBorder(),
                 ),
@@ -77,10 +79,22 @@ class _MyProfileState extends State<MyProfile> {
               ),
               TextFormField(
                 readOnly: true,
+                controller: carNumberController,
+                decoration:const InputDecoration(
+                  label:  Text("Mashina raqami"),
+                  suffixIcon: Icon(Icons.car_crash_outlined),
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(
+                height: 20,
+              ),
+              TextFormField(
+                readOnly: true,
                 maxLines: 5,
                 controller: descriptionController,
                 decoration:const InputDecoration(
-                  label:  Text("Hodim haqida"),
+                  label:  Text("Xaydovchi haqida"),
                   suffixIcon: Icon(Icons.info_outline),
                   border: OutlineInputBorder(),
                 ),
