@@ -1,0 +1,67 @@
+{
+  "project_info": {
+    "project_number": "1049538631244",
+    "project_id": "evakuvator",
+    "storage_bucket": "evakuvator.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1049538631244:android:7771f43681a1f5702ec6e9",
+        "android_client_info": {
+          "package_name": "com.example.driver_evakuator"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCIaHXZXZfMsYg-Wd4EjrgXK2MetROOEVE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1049538631244:android:a85feac5cb46c2bb2ec6e9",
+        "android_client_info": {
+          "package_name": "uz.goldapps.evakuvator.evakuvator"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCIaHXZXZfMsYg-Wd4EjrgXK2MetROOEVE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1049538631244:android:0ebe7654c0dcae702ec6e9",
+        "android_client_info": {
+          "package_name": "uz.sirdaryotexonpark.ypx.ypx_evakuator"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCIaHXZXZfMsYg-Wd4EjrgXK2MetROOEVE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
