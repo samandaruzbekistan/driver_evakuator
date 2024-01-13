@@ -12,6 +12,7 @@ import 'package:hive/hive.dart';
 import 'package:rflutter_alert/rflutter_alert.dart';
 import 'package:sliding_clipped_nav_bar/sliding_clipped_nav_bar.dart';
 import 'package:http/http.dart' as http;
+import '../job_detail/job_detail.dart';
 import 'components/categories.dart';
 import 'components/discount_banner.dart';
 import 'components/home_header.dart';
@@ -189,9 +190,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         final item = data[index];
                         return GestureDetector(
                           onTap: () async {
-                            if (int.parse(item['balans']) <=
+                            if (item['price'] <=
                                 int.parse(box.get('balans'))) {
-                              _buildForm(context, item['id'], item['balans']);
+                              _buildForm(context, item['_id'], item['price']);
                             } else {
                               _balansError(context);
                             }
@@ -231,16 +232,16 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _buildForm(BuildContext context, String id, String balans) {
+  void _buildForm(BuildContext context, String id, int balans) {
     Alert(
       context: context,
       type: AlertType.warning,
       title: "Xabar!",
-      desc: "Ishni qabul qilasizmi?",
+      desc: "Ishni qabul qilasizmi?\nNarxi: ${balans}",
       buttons: [
         DialogButton(
           onPressed: () {
-            // Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => JobDetails(id: id, balans: balans,)));
+            Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => JonDetail(id: id, balans: balans,)));
           },
           child: Text(
             "Qabul qilish",
