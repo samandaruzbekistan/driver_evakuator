@@ -20,79 +20,6 @@ class ApiController {
   var codeTrue = false.obs;
   var loginTrue = false.obs;
 
-  Future<int?> TempSaveUserData(
-      { required String name,
-        required String phone,
-        required String password,
-        required String location_id,
-        required String location_name
-      }) async {
-    box.put("temp_name",name);
-    box.put("temp_phone",phone);
-    box.put("temp_password",password);
-    box.put("temp_location_id",location_id);
-    box.put("temp_location_name",location_name);
-    final fourDigitNumber = random.nextInt(9000) + 1000;
-    box.put("code","${fourDigitNumber}");
-    isLoad.value = true;
-
-    var headers = {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer eXB4ZXZha3VhdG9ycGFzc3dvcmQ='
-    };
-    var request = http.Request('POST', Uri.parse("http://94.241.168.135:3000/api/v1/mobile"));
-    request.body = json.encode({
-      "jsonrpc": "2.0",
-      "apiversion": "1.0",
-      "params": {
-        "method": "CheckUsers",
-        "body": {
-          "phonenumber": phone
-        }
-      }
-    });
-    request.headers.addAll(headers);
-
-    http.StreamedResponse response = await request.send();
-    if(response.statusCode == 200){
-      var res = await response.stream.bytesToString();
-      Map valueMap = json.decode(res);
-      if(valueMap['success'] == false){
-        var headers = {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer eXB4ZXZha3VhdG9ycGFzc3dvcmQ='
-        };
-        var request = http.Request('POST', Uri.parse("http://94.241.168.135:3000/api/v1/mobile"));
-        request.body = json.encode({
-          "jsonrpc": "2.0",
-          "apiversion": "1.0",
-          "params": {
-            "method": "SendSms",
-            "body": {
-              "phonenumber": phone,
-              "smscode": fourDigitNumber
-            }
-          }
-        });
-        request.headers.addAll(headers);
-
-        http.StreamedResponse response = await request.send();
-        if (response.statusCode == 200) {
-          return 1;
-        }
-        else{
-          return -1;
-        }
-      }
-      else{
-        return 0;
-      }
-    }
-    else{
-      return -1;
-    }
-    return -1;
-  }
 
 
   Future<int?> checkCode(String code) async {
@@ -103,6 +30,7 @@ class ApiController {
     var kod = box.get('code');
     if(kod == code){
       var name = box.get('temp_name');
+      var id = box.get('temp_id');
       var phone = box.get('temp_phone');
       var region_name = box.get('temp_region_name');
       var region_id = box.get('temp_region_id');
@@ -131,6 +59,7 @@ class ApiController {
       Map valueMap2 = json.decode(res);
       if (valueMap2['success'] == true) {
         box.put('phone', phone);
+        box.put('id', id);
         box.put('name', name);
         box.put('region_name', region_name);
         box.put('region_id', region_id);
@@ -171,11 +100,13 @@ class ApiController {
       var res = await loginResponse.stream.bytesToString();
       Map valueMap = json.decode(res);
       if (valueMap['success'] == true) {
-        print(valueMap);
+        print("55555555555555555555555");
+        print(valueMap['message']['_id']);
         final fourDigitNumber = random.nextInt(9000) + 1000;
         box.put("code","${fourDigitNumber}");
         // print(valueMap);
         box.put('temp_phone', valueMap['message']['phonenumber']);
+        box.put('temp_id', valueMap['message']['_id']);
         box.put('temp_name', valueMap['message']['username']);
         box.put('temp_region_name', valueMap['message']['location']);
         box.put('temp_region_id', valueMap['message']['location_id']);

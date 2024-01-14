@@ -174,7 +174,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     );
                   } else if (status == -1) {
                     return Center(
-                      child: Text('API da nosozlik'),
+                      child: Text('Buyurtmalar mavjud emas'),
                     );
                   } else if (status == -2) {
                     return Center(

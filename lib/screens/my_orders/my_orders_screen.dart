@@ -27,18 +27,19 @@ class _MyOrdersState extends State<MyOrders> {
       'Content-Type': 'application/json',
       'Authorization': 'Bearer eXB4ZXZha3VhdG9ycGFzc3dvcmQ='
     };
-    var request = http.Request('POST', Uri.parse('http://94.241.168.135:6000/ypx/api/v1/mobile'));
+    var request = http.Request('POST', Uri.parse('http://94.241.168.135:3000/api/v1/mobile'));
     request.body = json.encode({
       "jsonrpc": "2.0",
       "apiversion": "1.0",
       "params": {
-        "method": "History",
+        "method": "DriverHistory",
         "body": {
-          "phonenumber": '${box.get('phone')}'
+          "driverid": "${box.get('id')}"
         }
       }
     });
     request.headers.addAll(headers);
+
 
     final connectivityResult = await (Connectivity().checkConnectivity());
     if (connectivityResult != ConnectivityResult.none) {
@@ -53,7 +54,7 @@ class _MyOrdersState extends State<MyOrders> {
           setState(() {
             // print(data);
             status = 1;
-            ordersData = List<Map<String, dynamic>>.from(data['messages']);
+            ordersData = List<Map<String, dynamic>>.from(data['message']);
           });
         }
       } else {
@@ -127,6 +128,7 @@ class _MyOrdersState extends State<MyOrders> {
                     if (item['status'] == false) {
                       _findWorker(context);
                     } else if (item['status'] == true) {
+                      print("history");
                       var headers = {
                         'Content-Type': 'application/json',
                         'Authorization': 'Bearer eXB4ZXZha3VhdG9ycGFzc3dvcmQ='
@@ -146,11 +148,6 @@ class _MyOrdersState extends State<MyOrders> {
 
                       http.StreamedResponse response = await request.send();
 
-
-                      // var request = http.MultipartRequest('POST',
-                      //     Uri.parse('https://mytok.uz/API/getorderuser.php'));
-                      // request.fields.addAll({'workid': '${item['id']}'});
-                      // http.StreamedResponse response = await request.send();
                       var res2 = await response.stream.bytesToString();
                       Map valueMap2 = json.decode(res2);
                       if (response.statusCode == 200) {
@@ -161,10 +158,10 @@ class _MyOrdersState extends State<MyOrders> {
                     }
                   },
                   child: ListTile(
-                      title: Text(item['category'] ?? ''),
-                      subtitle: _buildStatus(item['status']),
-                      leading: item['category'] != null ? _buildLeadingIcon(item['category']) : _buildLeadingIcon("YTH"),
-                      trailing: _buildIcon(item['status'])),
+                      title: Text(item['category'] ?? 'YTH'),
+                      subtitle: _buildStatus(item['process']),
+                      // leading: item['category'] != null ? _buildLeadingIcon(item['category']) : _buildLeadingIcon("YTH"),
+                      trailing: _buildIcon(item['process'])),
                 );
               },
             );
@@ -190,7 +187,7 @@ class _MyOrdersState extends State<MyOrders> {
       );
     } else {
       return CircleAvatar(
-        child: Image.asset("assets/images/montaj.png"),
+        child: Image.asset("assets/images/eva_call.png"),
       );
     }
   }
@@ -206,16 +203,16 @@ class _MyOrdersState extends State<MyOrders> {
     } else {
       return CircleAvatar(
         backgroundColor: kPrimaryColor,
-        child: Icon(Icons.check),
+        child: Icon(Icons.check, color: Colors.white),
       );
     }
   }
 
   Widget _buildStatus(bool category) {
     if (category == false) {
-      return Text("Evakuator izlanmoqda");
+      return Text("Jarayonda");
     } else {
-      return Text("Evakuator topildi");
+      return Text("Ish yakunlangan");
     }
   }
 
