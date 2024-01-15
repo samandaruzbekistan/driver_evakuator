@@ -3,6 +3,7 @@ import 'package:driver_evakuator/components/bottomNavigation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hive/hive.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../contact/contact_screen.dart';
 import 'components/profile_menu.dart';
@@ -56,6 +57,14 @@ class ProfileScreen extends StatelessWidget {
               icon: "assets/icons/Call.svg",
               press: () {
                 Get.to(Contact());
+              },
+            ),
+            ProfileMenu(
+              text: "Hisobni to'ldirish",
+              icon: "assets/icons/Cash.svg",
+              press: () {
+                final url = Uri.parse('https://ypx-evakuator.uz/payment');
+                launchUrl(url, mode: LaunchMode.externalApplication);
               },
             ),
             ProfileMenu(

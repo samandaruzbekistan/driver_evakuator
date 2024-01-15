@@ -200,7 +200,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           child: Card(
                             color: Colors.white,
                             child: ListTile(
-                              leading: _buildLeadingIcon(item['category']),
+                              leading: _buildLeadingIcon(item['category'],item['ypx']),
                               title: Text(
                                 item['category'] ?? '',
                                 style: TextStyle(
@@ -255,8 +255,13 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-_buildLeadingIcon(String category) {
-  if (category == "YPX") {
+_buildLeadingIcon(String category, bool ypx) {
+  if(ypx == true){
+    return CircleAvatar(
+      child: Image.asset("assets/images/logo.png"),
+    );
+  }
+  else if (category == "YPX") {
     return CircleAvatar(
       child: Image.asset("assets/icons/eva_call.png"),
     );
