@@ -6,6 +6,7 @@ import 'package:hive/hive.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../contact/contact_screen.dart';
+import '../test.dart';
 import 'components/profile_menu.dart';
 import 'my_profile.dart';
 
@@ -63,8 +64,9 @@ class ProfileScreen extends StatelessWidget {
               text: "Hisobni to'ldirish",
               icon: "assets/icons/Cash.svg",
               press: () {
-                final url = Uri.parse('https://ypx-evakuator.uz/payment');
-                launchUrl(url, mode: LaunchMode.externalApplication);
+                Get.to(LocationPage());
+                // final url = Uri.parse('https://ypx-evakuator.uz/payment');
+                // launchUrl(url);
               },
             ),
             ProfileMenu(

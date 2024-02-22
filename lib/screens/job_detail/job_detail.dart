@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'dart:convert';
-
+import 'dart:math' show cos, sqrt, asin;
 import 'package:driver_evakuator/constants.dart';
 import 'package:driver_evakuator/screens/home/home_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
 import 'package:http/http.dart' as http;
@@ -21,13 +23,22 @@ class JonDetail extends StatefulWidget {
   State<JonDetail> createState() => _JonDetailState();
 }
 
-class _JonDetailState extends State<JonDetail> {
+class _JonDetailState extends State<JonDetail> with TickerProviderStateMixin {
   var box = Hive.box('users');
   bool getData = false;
   bool progress = false;
   bool isLoading = false;
-
+  late AnimationController _controller;
+  int _secondsRemaining = 1800;
+  bool _isResendButtonVisible = false;
   Map<String, dynamic> ordersData = {};
+  bool _start = false;
+  late Position _currentPosition;
+  late Position _previousPosition;
+  double _totalDistance = 0;
+  List<Position> locations = [];
+
+  late StreamSubscription<Position> _positionStream;
 
   @override
   void initState() {
@@ -61,6 +72,92 @@ class _JonDetailState extends State<JonDetail> {
     }
   }
 
+  countdown(){
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 60),
+    )..addStatusListener((status) {
+    });
+
+    // Update the countdown value using a listener
+    _controller.addListener(() {
+      setState(() {
+        _secondsRemaining = (_controller.duration!.inSeconds - _controller.value * _controller.duration!.inSeconds).round();
+      });
+    });
+
+    _controller.forward();
+  }
+
+  void _startLocationUpdates() {
+    print(55);
+    setState(() {
+      _start = true;
+    });
+    _positionStream = Geolocator.getPositionStream(
+      distanceFilter: 10,
+      desiredAccuracy: LocationAccuracy.high,
+    ).listen((Position position) async {
+      if (await Geolocator.isLocationServiceEnabled()) {
+        setState(() {
+          _start = true;
+        });
+        _updateLocationData(position);
+      } else {
+        _showGpsOffDialog();
+      }
+    });
+  }
+
+  void _updateLocationData(Position newPosition) {
+    var distanceBetweenLastTwoLocations;
+    _currentPosition = newPosition;
+    locations.add(_currentPosition);
+
+    if (locations.length > 1) {
+      _previousPosition = locations[locations.length - 2];
+
+      distanceBetweenLastTwoLocations = calculateDistance(_previousPosition.latitude, _previousPosition.longitude, _currentPosition.latitude, _currentPosition.longitude);
+
+      distanceBetweenLastTwoLocations;
+      // print('Total Distance: $_totalDistance');
+    }
+    setState(() {
+      _totalDistance += distanceBetweenLastTwoLocations;
+    });
+    print(_totalDistance);
+  }
+
+  double calculateDistance(lat1, lon1, lat2, lon2){
+    var p = 0.017453292519943295;
+    var c = cos;
+    var a = 0.5 - c((lat2 - lat1) * p)/2 +
+        c(lat1 * p) * c(lat2 * p) *
+            (1 - c((lon2 - lon1) * p))/2;
+    return 12742 * asin(sqrt(a));
+  }
+
+  void _showGpsOffDialog() {
+    print("GPS is off.");
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          content: const Text('Make sure your GPS is on in Settings !'),
+          actions: <Widget>[
+            TextButton(
+              child: Text('OK'),
+              onPressed: () {
+                Navigator.of(context, rootNavigator: true).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+
   getOrder() async {
     var balans = int.parse(box.get('balans')) - widget.balans;
     var headers = {
@@ -86,6 +183,7 @@ class _JonDetailState extends State<JonDetail> {
     final data = json.decode(res);
     print(data);
     if (data['success'] == true) {
+      print(data['messages']);
       setState(() {
         getData = true;
         ordersData = Map<String, dynamic>.from(data['messages']);
@@ -224,7 +322,7 @@ class _JonDetailState extends State<JonDetail> {
                                 color: Colors.white,
                               ),
                               onPressed: () {
-                                launchUrl(Uri.parse('tel:' + "+998orderId"));
+                                launchUrl(Uri.parse('tel:' + "+998${ordersData['userphone']}"));
                               },
                             ),
                           ),
@@ -252,25 +350,32 @@ class _JonDetailState extends State<JonDetail> {
                       ),
                     ),
                     SizedBox(
-                      height: h * 0.1,
+                      height: h * 0.02,
+                    ),
+                    Text(
+                      "KM: ${double.parse(_totalDistance.toStringAsFixed(2))}",
+                      style: const TextStyle(color: Colors.deepPurple, fontSize: 20),
+                    ),
+                    SizedBox(
+                      height: h * 0.02,
                     ),
                     Container(
                       width: w * 0.8,
                       child: ElevatedButton(
                         onPressed: () {
-                          complateOrder("${widget.id}");
+                          _startLocationUpdates();
                         },
                         child: isLoading
                             ?  CircularProgressIndicator(
                                 color: Colors.white)
                             :  Text(
-                                "Ishni yakunlash",
+                                _start ? "Yakunlash" : "Ishni boshlash",
                                 style: TextStyle(color: Colors.white, fontSize: 20),
                               ),
                         style: ElevatedButton.styleFrom(
                           shape: StadiumBorder(),
                           // elevation: 20,
-                          backgroundColor: kPrimaryColor,
+                          backgroundColor: _start ? Colors.red : kPrimaryColor,
                           minimumSize: const Size.fromHeight(60),
                         ),
                       ),
@@ -292,6 +397,26 @@ _jobError(context) {
     type: AlertType.info,
     title: "Xatolik!",
     desc: "Buyurtma mavjud emas",
+    buttons: [
+      DialogButton(
+        child: Text(
+          "To'ldirish",
+          style: TextStyle(color: Colors.white, fontSize: 14),
+        ),
+        onPressed: () => Get.offAll(HomeScreen()),
+        color: Colors.black,
+        radius: BorderRadius.circular(0.0),
+      ),
+    ],
+  ).show();
+}
+
+_jobComplete(context) {
+  Alert(
+    context: context,
+    type: AlertType.info,
+    title: "Xabar!",
+    desc: "Umumiy masofa:",
     buttons: [
       DialogButton(
         child: Text(

@@ -64,6 +64,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> fetchData() async {
+    // print(box.get('region_id'));
+    // print(box.get('id'));
     var headers = {
       'Content-Type': 'application/json',
       'Authorization': 'Bearer eXB4ZXZha3VhdG9ycGFzc3dvcmQ='
