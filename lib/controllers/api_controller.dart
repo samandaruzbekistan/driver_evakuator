@@ -148,6 +148,7 @@ class ApiController {
     final fourDigitNumber = random.nextInt(9000) + 1000;
     box.put("code","${fourDigitNumber}");
     box.put("temp_phone",phone);
+    print(fourDigitNumber);
     var headers = {
       'Content-Type': 'application/json',
       'Authorization': 'Bearer eXB4ZXZha3VhdG9ycGFzc3dvcmQ='

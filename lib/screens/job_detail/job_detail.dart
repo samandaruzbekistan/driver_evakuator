@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:math' show cos, sqrt, asin;
+import 'dart:math' show asin, atan2, cos, pi, sin, sqrt;
 import 'package:driver_evakuator/constants.dart';
 import 'package:driver_evakuator/screens/home/home_screen.dart';
 import 'package:flutter/material.dart';
@@ -30,12 +30,15 @@ class _JonDetailState extends State<JonDetail> with TickerProviderStateMixin {
   bool isLoading = false;
   late AnimationController _controller;
   int _secondsRemaining = 1800;
+  int _counter = 0;
   bool _isResendButtonVisible = false;
   Map<String, dynamic> ordersData = {};
   bool _start = false;
   late Position _currentPosition;
   late Position _previousPosition;
   double _totalDistance = 0;
+  double _totalDistanceKm = 0;
+  double _metr = 0;
   List<Position> locations = [];
 
   late StreamSubscription<Position> _positionStream;
@@ -89,18 +92,19 @@ class _JonDetailState extends State<JonDetail> with TickerProviderStateMixin {
     _controller.forward();
   }
 
-  void _startLocationUpdates() {
-    print(55);
+  void startLocationUpdates() async {
     setState(() {
       _start = true;
     });
     _positionStream = Geolocator.getPositionStream(
       distanceFilter: 10,
-      desiredAccuracy: LocationAccuracy.high,
+      desiredAccuracy: LocationAccuracy.best,
+      // forceAndroidLocationManager: true,
     ).listen((Position position) async {
       if (await Geolocator.isLocationServiceEnabled()) {
+        _currentPosition = position; // Initialize here
         setState(() {
-          _start = true;
+          _counter++;
         });
         _updateLocationData(position);
       } else {
@@ -110,9 +114,11 @@ class _JonDetailState extends State<JonDetail> with TickerProviderStateMixin {
   }
 
   void _updateLocationData(Position newPosition) {
+    // if (_currentPosition == null || locations.isEmpty) return;
     var distanceBetweenLastTwoLocations;
     _currentPosition = newPosition;
     locations.add(_currentPosition);
+    _previousPosition = locations.last;
 
     if (locations.length > 1) {
       _previousPosition = locations[locations.length - 2];
@@ -120,21 +126,38 @@ class _JonDetailState extends State<JonDetail> with TickerProviderStateMixin {
       distanceBetweenLastTwoLocations = calculateDistance(_previousPosition.latitude, _previousPosition.longitude, _currentPosition.latitude, _currentPosition.longitude);
 
       distanceBetweenLastTwoLocations;
-      // print('Total Distance: $_totalDistance');
+      print("previous lat long:  [${_previousPosition.latitude} ,${_previousPosition.longitude}]");
+      print("current lat long:  [${_currentPosition.latitude} ,${_currentPosition.longitude}]");
+
+
+      if(_counter > 5 && distanceBetweenLastTwoLocations > 2){
+        print(_totalDistance);
+        setState(() {
+          _metr = distanceBetweenLastTwoLocations;
+          _currentPosition = newPosition;
+          locations.add(_currentPosition);
+          _totalDistance += distanceBetweenLastTwoLocations;
+          _totalDistanceKm += _totalDistance/1000;
+        });
+      }
     }
-    setState(() {
-      _totalDistance += distanceBetweenLastTwoLocations;
-    });
-    print(_totalDistance);
   }
 
-  double calculateDistance(lat1, lon1, lat2, lon2){
-    var p = 0.017453292519943295;
-    var c = cos;
-    var a = 0.5 - c((lat2 - lat1) * p)/2 +
-        c(lat1 * p) * c(lat2 * p) *
-            (1 - c((lon2 - lon1) * p))/2;
-    return 12742 * asin(sqrt(a));
+
+  double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
+    const R = 6371000; // Radius of the earth in meters
+    var dLat = _toRadians(lat2 - lat1);
+    var dLon = _toRadians(lon2 - lon1);
+    var a = sin(dLat / 2) * sin(dLat / 2) +
+        cos(_toRadians(lat1)) * cos(_toRadians(lat2)) *
+            sin(dLon / 2) * sin(dLon / 2);
+    var c = 2 * atan2(sqrt(a), sqrt(1 - a));
+    var distance = R * c; // Distance in meters
+    return distance;
+  }
+
+  double _toRadians(double degree) {
+    return degree * (pi / 180);
   }
 
   void _showGpsOffDialog() {
@@ -353,7 +376,15 @@ class _JonDetailState extends State<JonDetail> with TickerProviderStateMixin {
                       height: h * 0.02,
                     ),
                     Text(
-                      "KM: ${double.parse(_totalDistance.toStringAsFixed(2))}",
+                      "counter: ${_counter}",
+                      style: const TextStyle(color: Colors.deepPurple, fontSize: 20),
+                    ),
+                    Text(
+                      "metr: ${_metr}",
+                      style: const TextStyle(color: Colors.deepPurple, fontSize: 20),
+                    ),
+                    Text(
+                      "Metr: ${double.parse(_totalDistanceKm.toStringAsFixed(2))}",
                       style: const TextStyle(color: Colors.deepPurple, fontSize: 20),
                     ),
                     SizedBox(
@@ -363,7 +394,7 @@ class _JonDetailState extends State<JonDetail> with TickerProviderStateMixin {
                       width: w * 0.8,
                       child: ElevatedButton(
                         onPressed: () {
-                          _startLocationUpdates();
+                          startLocationUpdates();
                         },
                         child: isLoading
                             ?  CircularProgressIndicator(
