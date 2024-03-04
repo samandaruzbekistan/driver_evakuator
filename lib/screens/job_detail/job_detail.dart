@@ -4,10 +4,11 @@ import 'dart:math' show asin, atan2, cos, pi, sin, sqrt;
 import 'package:driver_evakuator/constants.dart';
 import 'package:driver_evakuator/screens/home/home_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
+import 'package:geolocator/geolocator.dart' as geo;
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
 import 'package:http/http.dart' as http;
+
 import 'package:maps_launcher/maps_launcher.dart';
 import 'package:rflutter_alert/rflutter_alert.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -34,14 +35,20 @@ class _JonDetailState extends State<JonDetail> with TickerProviderStateMixin {
   bool _isResendButtonVisible = false;
   Map<String, dynamic> ordersData = {};
   bool _start = false;
-  late Position _currentPosition;
-  late Position _previousPosition;
+  late geo.Position _currentPosition;
+  late geo.Position _previousPosition;
   double _totalDistance = 0;
   double _totalDistanceKm = 0;
   double _metr = 0;
-  List<Position> locations = [];
+  String _orderId = "";
+  List<geo.Position> locations = [];
+  double minMoney = 0;
+  double minKm = 0;
+  double kmMoney = 0;
+  double amount = 0;
 
-  late StreamSubscription<Position> _positionStream;
+
+  late StreamSubscription<geo.Position> _positionStream;
 
   @override
   void initState() {
@@ -60,8 +67,12 @@ class _JonDetailState extends State<JonDetail> with TickerProviderStateMixin {
       "jsonrpc": "2.0",
       "apiversion": "1.0",
       "params": {
-        "method": "UpdateProsecc",
-        "body": {"orderid": orderId}
+        "method": "SaveDataKm",
+        "body": {
+          "orderid": "${_orderId}",
+          "money": "${amount.toInt()}",
+          "km": "${double.parse(_totalDistanceKm.toStringAsFixed(2))}"
+        }
       }
     });
     request.headers.addAll(headers);
@@ -74,6 +85,9 @@ class _JonDetailState extends State<JonDetail> with TickerProviderStateMixin {
       _jobError(context);
     }
   }
+
+
+
 
   countdown(){
     _controller = AnimationController(
@@ -96,12 +110,13 @@ class _JonDetailState extends State<JonDetail> with TickerProviderStateMixin {
     setState(() {
       _start = true;
     });
-    _positionStream = Geolocator.getPositionStream(
-      distanceFilter: 10,
-      desiredAccuracy: LocationAccuracy.best,
+    _positionStream = geo.Geolocator.getPositionStream(
+      distanceFilter: 5,
+      desiredAccuracy: geo.LocationAccuracy.best,
+      // timeLimit: Duration(seconds: 5),
       // forceAndroidLocationManager: true,
-    ).listen((Position position) async {
-      if (await Geolocator.isLocationServiceEnabled()) {
+    ).listen((geo.Position position) async {
+      if (await geo.Geolocator.isLocationServiceEnabled()) {
         _currentPosition = position; // Initialize here
         setState(() {
           _counter++;
@@ -113,7 +128,7 @@ class _JonDetailState extends State<JonDetail> with TickerProviderStateMixin {
     });
   }
 
-  void _updateLocationData(Position newPosition) {
+  void _updateLocationData(geo.Position newPosition) {
     // if (_currentPosition == null || locations.isEmpty) return;
     var distanceBetweenLastTwoLocations;
     _currentPosition = newPosition;
@@ -126,19 +141,21 @@ class _JonDetailState extends State<JonDetail> with TickerProviderStateMixin {
       distanceBetweenLastTwoLocations = calculateDistance(_previousPosition.latitude, _previousPosition.longitude, _currentPosition.latitude, _currentPosition.longitude);
 
       distanceBetweenLastTwoLocations;
-      print("previous lat long:  [${_previousPosition.latitude} ,${_previousPosition.longitude}]");
-      print("current lat long:  [${_currentPosition.latitude} ,${_currentPosition.longitude}]");
 
+      if(_counter > 5 && distanceBetweenLastTwoLocations > 5){
 
-      if(_counter > 5 && distanceBetweenLastTwoLocations > 2){
-        print(_totalDistance);
         setState(() {
           _metr = distanceBetweenLastTwoLocations;
           _currentPosition = newPosition;
           locations.add(_currentPosition);
           _totalDistance += distanceBetweenLastTwoLocations;
-          _totalDistanceKm += _totalDistance/1000;
+          _totalDistanceKm = _totalDistance/1000;
+          if(_totalDistanceKm > minKm){
+            var km = _totalDistanceKm - minKm;
+            amount = minMoney + (km * kmMoney);
+          }
         });
+
       }
     }
   }
@@ -152,8 +169,9 @@ class _JonDetailState extends State<JonDetail> with TickerProviderStateMixin {
         cos(_toRadians(lat1)) * cos(_toRadians(lat2)) *
             sin(dLon / 2) * sin(dLon / 2);
     var c = 2 * atan2(sqrt(a), sqrt(1 - a));
-    var distance = R * c; // Distance in meters
-    return distance;
+    var distance = R * c;
+    // Convert distance to kilometers
+    return distance; // Distance in kilometers
   }
 
   double _toRadians(double degree) {
@@ -206,9 +224,13 @@ class _JonDetailState extends State<JonDetail> with TickerProviderStateMixin {
     final data = json.decode(res);
     print(data);
     if (data['success'] == true) {
-      print(data['messages']);
       setState(() {
+        _orderId = "${data['messages']['id']}";
+        minKm = double.parse(data['messages']['minkm']);
+        kmMoney = double.parse(data['messages']['kmmoney']);
+        minMoney = double.parse(data['messages']['minmoney']);
         getData = true;
+        amount = double.parse(data['messages']['minmoney']);
         ordersData = Map<String, dynamic>.from(data['messages']);
       });
     } else {
@@ -376,15 +398,11 @@ class _JonDetailState extends State<JonDetail> with TickerProviderStateMixin {
                       height: h * 0.02,
                     ),
                     Text(
-                      "counter: ${_counter}",
+                      "Summa: ${amount.toInt()}",
                       style: const TextStyle(color: Colors.deepPurple, fontSize: 20),
                     ),
                     Text(
-                      "metr: ${_metr}",
-                      style: const TextStyle(color: Colors.deepPurple, fontSize: 20),
-                    ),
-                    Text(
-                      "Metr: ${double.parse(_totalDistanceKm.toStringAsFixed(2))}",
+                      "KM: ${double.parse(_totalDistanceKm.toStringAsFixed(2))}",
                       style: const TextStyle(color: Colors.deepPurple, fontSize: 20),
                     ),
                     SizedBox(
@@ -394,7 +412,7 @@ class _JonDetailState extends State<JonDetail> with TickerProviderStateMixin {
                       width: w * 0.8,
                       child: ElevatedButton(
                         onPressed: () {
-                          startLocationUpdates();
+                          _start ? _completeOrderAlert(context, "${double.parse(_totalDistanceKm.toStringAsFixed(2))}","${amount.toInt()}", "${_orderId}") : startLocationUpdates();
                         },
                         child: isLoading
                             ?  CircularProgressIndicator(
@@ -420,6 +438,26 @@ class _JonDetailState extends State<JonDetail> with TickerProviderStateMixin {
                 )),
     );
   }
+
+  _completeOrderAlert(context, String km, String amount, String id) {
+    Alert(
+      context: context,
+      type: AlertType.info,
+      title: "Diqqat!",
+      desc: "Ishni yakunlaysizmi?\nKM: ${km}\nSumma: ${amount}",
+      buttons: [
+        DialogButton(
+          child: Text(
+            "Yakunlash",
+            style: TextStyle(color: Colors.white, fontSize: 14),
+          ),
+          onPressed: () => complateOrder(id),
+          color: Colors.black,
+          radius: BorderRadius.circular(0.0),
+        ),
+      ],
+    ).show();
+  }
 }
 
 _jobError(context) {
@@ -441,6 +479,8 @@ _jobError(context) {
     ],
   ).show();
 }
+
+
 
 _jobComplete(context) {
   Alert(

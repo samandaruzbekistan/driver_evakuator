@@ -31,7 +31,6 @@ class OtpScreen extends StatelessWidget {
                   style: headingStyle,
                 ),
                 Text("Telefon raqam +998 ** *** ${phone.substring(phone.length - 4)}", style: TextStyle(fontSize: 20),),
-                Text("Telefon raqam +998 ** *** ${kod}", style: TextStyle(fontSize: 20),),
                 // Row(
                 //   mainAxisAlignment: MainAxisAlignment.center,
                 //   children: [
