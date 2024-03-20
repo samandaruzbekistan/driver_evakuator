@@ -6,7 +6,7 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <application
-        android:label="driver_evakuator"
+        android:label="Driver evakuator"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon">
         <activity

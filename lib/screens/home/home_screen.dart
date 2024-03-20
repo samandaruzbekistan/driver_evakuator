@@ -243,7 +243,7 @@ class _HomeScreenState extends State<HomeScreen> {
       buttons: [
         DialogButton(
           onPressed: () {
-            Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => JonDetail(id: id, balans: balans,)));
+            Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => JonDetail(id: id, balans: balans,is_process: 0,)));
           },
           child: Text(
             "Qabul qilish",

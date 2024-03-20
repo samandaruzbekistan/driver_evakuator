@@ -14,11 +14,13 @@ import 'package:rflutter_alert/rflutter_alert.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class JonDetail extends StatefulWidget {
-  const JonDetail({Key? key, required this.id, required this.balans})
+  const JonDetail({Key? key, required this.id, required this.balans, required this.is_process,this.order_data})
       : super(key: key);
 
   final String id;
   final int balans;
+  final int is_process;
+  final Map<String, dynamic>? order_data;
 
   @override
   State<JonDetail> createState() => _JonDetailState();
@@ -200,43 +202,56 @@ class _JonDetailState extends State<JonDetail> with TickerProviderStateMixin {
 
 
   getOrder() async {
-    var balans = int.parse(box.get('balans')) - widget.balans;
-    var headers = {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer eXB4ZXZha3VhdG9ycGFzc3dvcmQ='
-    };
-    var request = http.Request(
-        'POST', Uri.parse('http://94.241.168.135:3000/api/v1/mobile'));
-    request.body = json.encode({
-      "jsonrpc": "2.0",
-      "apiversion": "1.0",
-      "params": {
-        "method": "BuyOrder",
-        "body": {"orderid": "${widget.id}", "driverid": "${box.get('id')}", 'balans':"${balans }"}
-      }
-    });
-    request.headers.addAll(headers);
-
-    http.StreamedResponse response = await request.send();
-
-    box.put('balans', "${balans}");
-    var res = await response.stream.bytesToString();
-    final data = json.decode(res);
-    print(data);
-    if (data['success'] == true) {
+    if(widget.is_process == 1){
       setState(() {
-        _orderId = "${data['messages']['id']}";
-        minKm = double.parse(data['messages']['minkm']);
-        kmMoney = double.parse(data['messages']['kmmoney']);
-        minMoney = double.parse(data['messages']['minmoney']);
+        _orderId = "${widget.order_data?['_id']}";
+        minKm = double.parse(widget.order_data?['minkm']);
+        kmMoney = double.parse(widget.order_data?['kmmoney']);
+        minMoney = double.parse(widget.order_data?['minmoney']);
         getData = true;
-        amount = double.parse(data['messages']['minmoney']);
-        ordersData = Map<String, dynamic>.from(data['messages']);
+        amount = double.parse(widget.order_data?['minmoney']);
+        ordersData = widget.order_data!;
       });
-    } else {
-      setState(() {
-        progress = true;
+    }
+    else{
+      var balans = int.parse(box.get('balans')) - widget.balans;
+      var headers = {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer eXB4ZXZha3VhdG9ycGFzc3dvcmQ='
+      };
+      var request = http.Request(
+          'POST', Uri.parse('http://94.241.168.135:3000/api/v1/mobile'));
+      request.body = json.encode({
+        "jsonrpc": "2.0",
+        "apiversion": "1.0",
+        "params": {
+          "method": "BuyOrder",
+          "body": {"orderid": "${widget.id}", "driverid": "${box.get('id')}", 'balans':"${balans }"}
+        }
       });
+      request.headers.addAll(headers);
+
+      http.StreamedResponse response = await request.send();
+
+      box.put('balans', "${balans}");
+      var res = await response.stream.bytesToString();
+      final data = json.decode(res);
+      print(data);
+      if (data['success'] == true) {
+        setState(() {
+          _orderId = "${data['messages']['id']}";
+          minKm = double.parse(data['messages']['minkm']);
+          kmMoney = double.parse(data['messages']['kmmoney']);
+          minMoney = double.parse(data['messages']['minmoney']);
+          getData = true;
+          amount = double.parse(data['messages']['minmoney']);
+          ordersData = Map<String, dynamic>.from(data['messages']);
+        });
+      } else {
+        setState(() {
+          progress = true;
+        });
+      }
     }
   }
 

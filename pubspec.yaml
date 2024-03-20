@@ -48,7 +48,7 @@ dependencies:
   maps_launcher: ^2.2.0
   flutter_launcher_icons: ^0.13.1
   great_circle_distance_calculator: ^1.0.4
-
+  intl: ^0.19.0
 
 
   # The following adds the Cupertino Icons font to your application.

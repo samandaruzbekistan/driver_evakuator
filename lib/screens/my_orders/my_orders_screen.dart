@@ -1,5 +1,5 @@
 import 'dart:convert';
-
+import 'package:intl/intl.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
@@ -9,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:driver_evakuator/constants.dart';
 
 import '../../components/bottomNavigation.dart';
+import '../job_detail/job_detail.dart';
 
 class MyOrders extends StatefulWidget {
   const MyOrders({Key? key}) : super(key: key);
@@ -125,41 +126,23 @@ class _MyOrdersState extends State<MyOrders> {
                 final item = data[index];
                 return GestureDetector(
                   onTap: () async {
-                    if (item['status'] == false) {
-                      _findWorker(context);
-                    } else if (item['status'] == true) {
-                      print("history");
-                      var headers = {
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer eXB4ZXZha3VhdG9ycGFzc3dvcmQ='
-                      };
-                      var request = http.Request('POST', Uri.parse('http://94.241.168.135:6000/ypx/api/v1/mobile'));
-                      request.body = json.encode({
-                        "jsonrpc": "2.0",
-                        "apiversion": "1.0",
-                        "params": {
-                          "method": "DriverData",
-                          "body": {
-                            "id": "${item['_id']}"
-                          }
-                        }
-                      });
-                      request.headers.addAll(headers);
+                    if (item['process'] == true) {
+                      // _findWorker(context);
+                      Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => JonDetail(id: item['_id'], balans: item['price'],is_process: 1,order_data: item,)));
+                    } else if (item['process'] == false) {
+                      print(item);
 
-                      http.StreamedResponse response = await request.send();
 
-                      var res2 = await response.stream.bytesToString();
-                      Map valueMap2 = json.decode(res2);
-                      if (response.statusCode == 200) {
-                        print(valueMap2);
-                        _okWorker(context, "${valueMap2['messages']['drivername']}",
-                            "${valueMap2['messages']['driverphone']}","${valueMap2['messages']['carnumber']}");
-                      }
+                      // if (response.statusCode == 200) {
+                        _okWorker(context, "${item['userphone']}",
+                            "${item['description']}");
+                      // }
                     }
                   },
                   child: ListTile(
                       title: Text(item['category'] ?? 'YTH'),
-                      subtitle: _buildStatus(item['process']),
+                      subtitle: Text("${formatDateTime(item['updatedAt'])}" ?? ''),
+                      // subtitle: _buildStatus(item['process']),
                       // leading: item['category'] != null ? _buildLeadingIcon(item['category']) : _buildLeadingIcon("YTH"),
                       trailing: _buildIcon(item['process'])),
                 );
@@ -193,7 +176,7 @@ class _MyOrdersState extends State<MyOrders> {
   }
 
   Widget _buildIcon(bool category) {
-    if (category == false) {
+    if (category == true) {
       return Container(
           width: 20,
           height: 20,
@@ -209,7 +192,7 @@ class _MyOrdersState extends State<MyOrders> {
   }
 
   Widget _buildStatus(bool category) {
-    if (category == false) {
+    if (category == true) {
       return Text("Jarayonda");
     } else {
       return Text("Ish yakunlangan");
@@ -219,7 +202,11 @@ class _MyOrdersState extends State<MyOrders> {
 
 }
 
-
+String formatDateTime(String timestamp) {
+  DateTime dateTime = DateTime.parse(timestamp);
+  String formattedDateTime = DateFormat('y.MM.dd H:m').format(dateTime);
+  return formattedDateTime;
+}
 
 _findWorker(context) {
   Alert(
@@ -241,29 +228,17 @@ _findWorker(context) {
   ).show();
 }
 
-_okWorker(context, String worker, String worker_phone, String car_number) {
+_okWorker(context, String worker, String worker_phone) {
   Alert(
     context: context,
     type: AlertType.success,
-    title: "Hodim",
-    desc: "Ismi: ${worker}\nTel: ${worker_phone}\nRaqami: ${car_number}",
+    title: "Tarix",
+    desc: "Telefon: ${worker}\n${worker_phone}",
     buttons: [
       DialogButton(
-        child: GestureDetector(
-          onTap: () => launchUrl(Uri.parse('tel:' + "+${worker_phone}")),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.phone,
-                color: Colors.white,
-              ),
-              Text(
-                " Qo'ng'iroq qilish",
-                style: TextStyle(color: Colors.white, fontSize: 14),
-              ),
-            ],
-          ),
+        child: Text(
+          "OK",
+          style: TextStyle(color: Colors.white, fontSize: 14),
         ),
         onPressed: () => Navigator.pop(context),
         color: Colors.black,

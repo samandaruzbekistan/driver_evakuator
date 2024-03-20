@@ -1,3 +1,4 @@
+import 'package:driver_evakuator/screens/profile/balance.dart';
 import 'package:get/get.dart';
 import 'package:driver_evakuator/components/bottomNavigation.dart';
 import 'package:flutter/material.dart';
@@ -64,7 +65,7 @@ class ProfileScreen extends StatelessWidget {
               text: "Hisobni to'ldirish",
               icon: "assets/icons/Cash.svg",
               press: () {
-                Get.to(LocationPage());
+                Get.to(UpdateBalance());
                 // final url = Uri.parse('https://ypx-evakuator.uz/payment');
                 // launchUrl(url);
               },
