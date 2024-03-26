@@ -1,7 +1,9 @@
 
 
 import 'package:driver_evakuator/constants.dart';
+import 'package:driver_evakuator/main.dart';
 import 'package:driver_evakuator/screens/home/home_screen.dart';
+import 'package:driver_evakuator/screens/job_detail/test.dart';
 import 'package:driver_evakuator/screens/my_orders/my_orders_screen.dart';
 import 'package:driver_evakuator/screens/profile/profile_screen.dart';
 import 'package:flutter/material.dart';
@@ -36,7 +38,8 @@ class _BottomNavigationCustomState extends State<BottomNavigationCustom> {
           Get.offAll(HomeScreen());
         }
         else if(index == 1){
-          Get.to(MyOrders());
+          Get.to((MyApp3()));
+          // Get.to(MyOrders());
         }
       },
       iconSize: 30,

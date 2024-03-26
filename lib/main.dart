@@ -1,4 +1,6 @@
 
+import 'package:workmanager/workmanager.dart';
+
 import 'firebase_api.dart';
 import 'package:driver_evakuator/screens/home/home_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -11,6 +13,18 @@ import 'package:hive_flutter/hive_flutter.dart';
 
 import 'firebase_options.dart';
 
+const taskName = "firstTask";
+
+@pragma('vm:entry-point')
+void callbackDispatcher(){
+  Workmanager().executeTask((taskName, inputData){
+    switch (taskName){
+      case 'firstTask':
+        break;
+    }
+    return Future.value(true);
+  });
+}
 
 
 Future<void> main() async {
@@ -18,6 +32,10 @@ Future<void> main() async {
   await Hive.initFlutter();
   await Hive.openBox('users');
   WidgetsFlutterBinding.ensureInitialized();
+  Workmanager().initialize(
+      callbackDispatcher,
+      isInDebugMode: true
+  );
   SystemChrome.setPreferredOrientations(
       [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
   runApp(const MyApp());

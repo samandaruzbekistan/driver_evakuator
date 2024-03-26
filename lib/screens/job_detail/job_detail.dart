@@ -1,6 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:isolate';
 import 'dart:math' show asin, atan2, cos, pi, sin, sqrt;
+import 'dart:ui';
+
 import 'package:driver_evakuator/constants.dart';
 import 'package:driver_evakuator/screens/home/home_screen.dart';
 import 'package:flutter/material.dart';
@@ -12,6 +15,8 @@ import 'package:http/http.dart' as http;
 import 'package:maps_launcher/maps_launcher.dart';
 import 'package:rflutter_alert/rflutter_alert.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+import '../../location_callback_handler.dart';
 
 class JonDetail extends StatefulWidget {
   const JonDetail({Key? key, required this.id, required this.balans, required this.is_process,this.order_data})
@@ -50,11 +55,18 @@ class _JonDetailState extends State<JonDetail> with TickerProviderStateMixin {
   double amount = 0;
 
 
+  late Isolate _isolate;
+  late ReceivePort _receivePort;
+  static const String _isolateName = "LocatorIsolate";
+  ReceivePort port = ReceivePort();
+
   late StreamSubscription<geo.Position> _positionStream;
 
   @override
   void initState() {
     super.initState();
+
+
     getOrder();
   }
 
@@ -91,27 +103,17 @@ class _JonDetailState extends State<JonDetail> with TickerProviderStateMixin {
 
 
 
-  countdown(){
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 60),
-    )..addStatusListener((status) {
-    });
 
-    // Update the countdown value using a listener
-    _controller.addListener(() {
-      setState(() {
-        _secondsRemaining = (_controller.duration!.inSeconds - _controller.value * _controller.duration!.inSeconds).round();
-      });
-    });
 
-    _controller.forward();
-  }
 
   void startLocationUpdates() async {
+
+
     setState(() {
       _start = true;
     });
+
+
     _positionStream = geo.Geolocator.getPositionStream(
       distanceFilter: 5,
       desiredAccuracy: geo.LocationAccuracy.best,
@@ -270,187 +272,188 @@ class _JonDetailState extends State<JonDetail> with TickerProviderStateMixin {
       body: Container(
           child: getData
               ? Column(
+            children: [
+              ListTile(
+                title: Text(
+                  "Ish turi:",
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold, fontSize: w * 0.05),
+                ),
+                subtitle: Text(
+                  "${ordersData['category']}",
+                  style:
+                  TextStyle(color: Colors.grey, fontSize: w * 0.04),
+                ),
+                leading: CircleAvatar(
+                  child: Icon(
+                    Icons.workspaces_outline,
+                    color: Colors.white,
+                  ),
+                  backgroundColor: Colors.deepPurpleAccent,
+                ),
+              ),
+              ListTile(
+                title: Text(
+                  "Buyurtmachi:",
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold, fontSize: w * 0.05),
+                ),
+                subtitle: Text(
+                  "${ordersData['username']}",
+                  style:
+                  TextStyle(color: Colors.grey, fontSize: w * 0.04),
+                ),
+                leading: CircleAvatar(
+                  child: Icon(
+                    Icons.person_outline,
+                    color: Colors.white,
+                  ),
+                  backgroundColor: Colors.deepPurpleAccent,
+                ),
+              ),
+              ListTile(
+                title: Text(
+                  "Telefon:",
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold, fontSize: w * 0.05),
+                ),
+                subtitle: Text(
+                  "${ordersData['userphone']}",
+                  style:
+                  TextStyle(color: Colors.grey, fontSize: w * 0.04),
+                ),
+                leading: CircleAvatar(
+                  child: Icon(
+                    Icons.phone,
+                    color: Colors.white,
+                  ),
+                  backgroundColor: Colors.deepPurpleAccent,
+                ),
+              ),
+              ListTile(
+                title: Text(
+                  "Joylashuv:",
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold, fontSize: w * 0.05),
+                ),
+                subtitle: Text(
+                  "${ordersData['region']}",
+                  style:
+                  TextStyle(color: Colors.grey, fontSize: w * 0.04),
+                ),
+                leading: CircleAvatar(
+                  child: Icon(
+                    Icons.location_on_outlined,
+                    color: Colors.white,
+                  ),
+                  backgroundColor: Colors.deepPurpleAccent,
+                ),
+              ),
+              ListTile(
+                title: Text(
+                  "Qisqa tarif:",
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold, fontSize: w * 0.05),
+                ),
+                subtitle: Text(
+                  "${ordersData['description']}",
+                  style:
+                  TextStyle(color: Colors.grey, fontSize: w * 0.04),
+                ),
+                leading: CircleAvatar(
+                  child: Icon(
+                    Icons.phone,
+                    color: Colors.white,
+                  ),
+                  backgroundColor: Colors.deepPurpleAccent,
+                ),
+              ),
+              SizedBox(
+                height: h * 0.1,
+              ),
+              Center(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    ListTile(
-                      title: Text(
-                        "Ish turi:",
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: w * 0.05),
-                      ),
-                      subtitle: Text(
-                        "${ordersData['category']}",
-                        style:
-                            TextStyle(color: Colors.grey, fontSize: w * 0.04),
-                      ),
-                      leading: CircleAvatar(
-                        child: Icon(
-                          Icons.workspaces_outline,
-                          color: Colors.white,
-                        ),
-                        backgroundColor: Colors.deepPurpleAccent,
-                      ),
-                    ),
-                    ListTile(
-                      title: Text(
-                        "Buyurtmachi:",
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: w * 0.05),
-                      ),
-                      subtitle: Text(
-                        "${ordersData['username']}",
-                        style:
-                            TextStyle(color: Colors.grey, fontSize: w * 0.04),
-                      ),
-                      leading: CircleAvatar(
-                        child: Icon(
-                          Icons.person_outline,
-                          color: Colors.white,
-                        ),
-                        backgroundColor: Colors.deepPurpleAccent,
-                      ),
-                    ),
-                    ListTile(
-                      title: Text(
-                        "Telefon:",
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: w * 0.05),
-                      ),
-                      subtitle: Text(
-                        "${ordersData['userphone']}",
-                        style:
-                            TextStyle(color: Colors.grey, fontSize: w * 0.04),
-                      ),
-                      leading: CircleAvatar(
-                        child: Icon(
+                    CircleAvatar(
+                      backgroundColor: Colors.green,
+                      radius: 30,
+                      child: IconButton(
+                        icon: Icon(
                           Icons.phone,
                           color: Colors.white,
                         ),
-                        backgroundColor: Colors.deepPurpleAccent,
+                        onPressed: () {
+                          launchUrl(Uri.parse('tel:' + "+998${ordersData['userphone']}"));
+                        },
                       ),
                     ),
-                    ListTile(
-                      title: Text(
-                        "Joylashuv:",
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: w * 0.05),
-                      ),
-                      subtitle: Text(
-                        "${ordersData['region']}",
-                        style:
-                            TextStyle(color: Colors.grey, fontSize: w * 0.04),
-                      ),
-                      leading: CircleAvatar(
-                        child: Icon(
+                    SizedBox(
+                      width: w * 0.04,
+                    ),
+                    CircleAvatar(
+                      backgroundColor: Colors.pink,
+                      radius: 30,
+                      child: IconButton(
+                        icon: Icon(
                           Icons.location_on_outlined,
                           color: Colors.white,
                         ),
-                        backgroundColor: Colors.deepPurpleAccent,
-                      ),
-                    ),
-                    ListTile(
-                      title: Text(
-                        "Qisqa tarif:",
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: w * 0.05),
-                      ),
-                      subtitle: Text(
-                        "${ordersData['description']}",
-                        style:
-                            TextStyle(color: Colors.grey, fontSize: w * 0.04),
-                      ),
-                      leading: CircleAvatar(
-                        child: Icon(
-                          Icons.phone,
-                          color: Colors.white,
-                        ),
-                        backgroundColor: Colors.deepPurpleAccent,
-                      ),
-                    ),
-                    SizedBox(
-                      height: h * 0.1,
-                    ),
-                    Center(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          CircleAvatar(
-                            backgroundColor: Colors.green,
-                            radius: 30,
-                            child: IconButton(
-                              icon: Icon(
-                                Icons.phone,
-                                color: Colors.white,
-                              ),
-                              onPressed: () {
-                                launchUrl(Uri.parse('tel:' + "+998${ordersData['userphone']}"));
-                              },
-                            ),
-                          ),
-                          SizedBox(
-                            width: w * 0.04,
-                          ),
-                          CircleAvatar(
-                            backgroundColor: Colors.pink,
-                            radius: 30,
-                            child: IconButton(
-                              icon: Icon(
-                                Icons.location_on_outlined,
-                                color: Colors.white,
-                              ),
-                              onPressed: () {
-                                // openMaps(ordersData['lat'], ordersData['lang']);
-                                MapsLauncher.launchCoordinates(
-                                    ordersData['lat'],
-                                    ordersData['long'],
-                                    'Ish joylashuvi');
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    SizedBox(
-                      height: h * 0.02,
-                    ),
-                    Text(
-                      "Summa: ${amount.toInt()}",
-                      style: const TextStyle(color: Colors.deepPurple, fontSize: 20),
-                    ),
-                    Text(
-                      "KM: ${double.parse(_totalDistanceKm.toStringAsFixed(2))}",
-                      style: const TextStyle(color: Colors.deepPurple, fontSize: 20),
-                    ),
-                    SizedBox(
-                      height: h * 0.02,
-                    ),
-                    Container(
-                      width: w * 0.8,
-                      child: ElevatedButton(
                         onPressed: () {
-                          _start ? _completeOrderAlert(context, "${double.parse(_totalDistanceKm.toStringAsFixed(2))}","${amount.toInt()}", "${_orderId}") : startLocationUpdates();
+                          // openMaps(ordersData['lat'], ordersData['lang']);
+                          MapsLauncher.launchCoordinates(
+                              ordersData['lat'],
+                              ordersData['long'],
+                              'Ish joylashuvi');
                         },
-                        child: isLoading
-                            ?  CircularProgressIndicator(
-                                color: Colors.white)
-                            :  Text(
-                                _start ? "Yakunlash" : "Ishni boshlash",
-                                style: TextStyle(color: Colors.white, fontSize: 20),
-                              ),
-                        style: ElevatedButton.styleFrom(
-                          shape: StadiumBorder(),
-                          // elevation: 20,
-                          backgroundColor: _start ? Colors.red : kPrimaryColor,
-                          minimumSize: const Size.fromHeight(60),
-                        ),
                       ),
                     ),
                   ],
-                )
+                ),
+              ),
+              SizedBox(
+                height: h * 0.02,
+              ),
+              Text(
+                "Summa: ${amount.toInt()}",
+                style: const TextStyle(color: Colors.deepPurple, fontSize: 20),
+              ),
+              Text(
+                "KM: ${double.parse(_totalDistanceKm.toStringAsFixed(2))}",
+                style: const TextStyle(color: Colors.deepPurple, fontSize: 20),
+              ),
+              SizedBox(
+                height: h * 0.02,
+              ),
+              Container(
+                width: w * 0.8,
+                child: ElevatedButton(
+                  onPressed: () {
+                    // _start ? _completeOrderAlert(context, "${double.parse(_totalDistanceKm.toStringAsFixed(2))}","${amount.toInt()}", "${_orderId}") : startLocationUpdates();
+                    _start ? _completeOrderAlert(context, "${double.parse(_totalDistanceKm.toStringAsFixed(2))}","${amount.toInt()}", "${_orderId}") : startLocationUpdates();
+                  },
+                  child: isLoading
+                      ?  CircularProgressIndicator(
+                      color: Colors.white)
+                      :  Text(
+                    _start ? "Yakunlash" : "Ishni boshlash",
+                    style: TextStyle(color: Colors.white, fontSize: 20),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    shape: StadiumBorder(),
+                    // elevation: 20,
+                    backgroundColor: _start ? Colors.red : kPrimaryColor,
+                    minimumSize: const Size.fromHeight(60),
+                  ),
+                ),
+              ),
+            ],
+          )
               : Center(
-                  child: progress
-                      ? _jobError(context)
-                      : CircularProgressIndicator(),
-                )),
+            child: progress
+                ? _jobError(context)
+                : CircularProgressIndicator(),
+          )),
     );
   }
 
