@@ -1,12 +1,17 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:isolate';
+import 'dart:math';
 import 'dart:ui';
 
+import 'package:driver_evakuator/background_locator/db.dart';
+import 'package:driver_evakuator/background_locator/models.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
+import 'package:hive/hive.dart';
 
+import '../controllers/api_controller.dart';
 import '../controllers/location_controller.dart';
 import 'android_settings.dart';
 import 'auto_stop_handler.dart';
@@ -89,7 +94,6 @@ class BackgroundLocator {
 
 
 class LocationServiceRepository {
-  final LocationController control = Get.put(LocationController());
 
   static const String isolateName = 'LocatorIsolate';
   static LocationServiceRepository _instance = LocationServiceRepository._();
@@ -106,9 +110,46 @@ class LocationServiceRepository {
     IsolateNameServer.lookupPortByName(isolateName)
         ?.send(locationDto.toJson());
     var js = locationDto.toJson();
-    control.addLocation(js['latitude'], js['latitude']);
-    // print("lat: ${js['latitude']}");
-    // print("long: ${js['latitude']}");
+    var job = await LocalDatabase().getFalseStatusJob();
+    print(job);
+    if(job?['lat'] != 0.0 && job?['long'] != 0.0){
+      var distanceMetr = calculateDistance(job?['lat'], job?['long'], js['latitude'],  js['longitude']);
+      var newDistance = job?['totalDistanceKm'] + (distanceMetr/1000);
+      if(newDistance > job?['minKm']){
+        var km = newDistance - job?['minKm'];
+        var amount = job?['minMoney'] + (km * job?['kmMoney']);
+        await LocalDatabase().updateLocationAndInfo(js['latitude'], js['longitude'], amount, newDistance);
+      }
+      else{
+        await LocalDatabase().updateLocationAndInfo(js['latitude'], js['longitude'], job?['amount'], newDistance);
+      }
+    }
+    else{
+      await LocalDatabase().updateLocation(js['latitude'], js['longitude']);
+    }
+
+    // LocalDatabase().printLocationById(1);
+    // await LocalDatabase().addLocation(LocationModel(lat: js['latitude'], long: js['longitude']));
+    // await apiController.addLocation(js['latitude'], js['latitude']);
+    print("lat: ${js['latitude']}");
+    print("long: ${js['latitude']}");
+  }
+
+  double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
+    const R = 6371000; // Radius of the earth in meters
+    var dLat = _toRadians(lat2 - lat1);
+    var dLon = _toRadians(lon2 - lon1);
+    var a = sin(dLat / 2) * sin(dLat / 2) +
+        cos(_toRadians(lat1)) * cos(_toRadians(lat2)) *
+            sin(dLon / 2) * sin(dLon / 2);
+    var c = 2 * atan2(sqrt(a), sqrt(1 - a));
+    var distance = R * c;
+    // Convert distance to kilometers
+    return distance; // Distance in kilometers
+  }
+
+  double _toRadians(double degree) {
+    return degree * (pi / 180);
   }
 
 }

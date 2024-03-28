@@ -50,6 +50,7 @@ dependencies:
   intl: ^0.19.0
   permission_handler: ^11.3.0
   background_locator_2:
+  sqflite: ^2.3.2
 
 
   # The following adds the Cupertino Icons font to your application.
@@ -59,8 +60,8 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  build_runner:
   hive_generator:
+  build_runner: ^2.1.2
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is

@@ -1,3 +1,5 @@
+import 'package:driver_evakuator/background_locator/db.dart';
+
 import 'firebase_api.dart';
 import 'package:driver_evakuator/screens/home/home_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -15,7 +17,7 @@ Future<void> main() async {
 // Ensure Flutter is initialized.
   await Hive.initFlutter();
   await Hive.openBox('users');
-  await Hive.openBox('distanceBox');
+  LocalDatabase().createDatabase();
   WidgetsFlutterBinding.ensureInitialized();
 
   SystemChrome.setPreferredOrientations(

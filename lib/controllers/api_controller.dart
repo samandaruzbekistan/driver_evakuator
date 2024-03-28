@@ -20,7 +20,14 @@ class ApiController {
   var codeTrue = false.obs;
   var loginTrue = false.obs;
 
+  Future addLocation(double lat, double long) async {
 
+    print('---------${lat}');
+    print(lat);
+    box.put('lat', "lat");
+    box.put('long', "long");
+    print("in box ${box}");
+  }
 
   Future<int?> checkCode(String code) async {
     var headers = {
