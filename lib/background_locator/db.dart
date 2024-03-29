@@ -1,11 +1,13 @@
 import 'package:driver_evakuator/background_locator/models.dart';
+import 'package:driver_evakuator/controllers/location_controller.dart';
+import 'package:get/get.dart';
 import 'package:sqflite/sqflite.dart';
 
 class LocalDatabase{
   Database? database;
   String tableName = "locations";
   String jobsTableName = "jobs";
-
+  final LocationController controller = Get.put(LocationController());
   LocalDatabase();
 
   Future<Database> getDb() async {
@@ -56,7 +58,7 @@ class LocalDatabase{
         ")");
   }
 
-  Future addJob(JobModel jobModel) async {
+  Future addJob(JobModel jobModel, double minMoney) async {
     Database db = await getDb();
     var id = await db.insert(jobsTableName, jobModel.toJson());
     print("Job $id bilan databsega saqlandi");
@@ -79,6 +81,8 @@ class LocalDatabase{
       return null;
     }
   }
+
+
 
   Future<int> getPendingJobCount() async {
     Database db = await getDb();
@@ -129,6 +133,22 @@ class LocalDatabase{
     print('Location has been updated.');
   }
 
+  Future<void> completeJob(String id) async {
+    Database db = await getDb();
+
+    // Update the row with the specified id
+    await db.update(
+      jobsTableName,
+      {
+        'status': true,
+      },
+      where: 'job_id = ?',
+      whereArgs: [id],
+    );
+
+    print('Job completed.');
+  }
+
   Future<void> updateLocationAndInfo(double newLat, double newLong, double amount, double totalDistanceKm) async {
     Database db = await getDb();
 
@@ -144,8 +164,10 @@ class LocalDatabase{
       where: 'status = ?',
       whereArgs: ['false'],
     );
-
-    print('Location has been updated.');
+    // controller.updateJobData(amount, newLat);
+    // controller.amount.value = amount;
+    // print('Location has been updated.');
+    // print(controller.amount);
   }
 
 

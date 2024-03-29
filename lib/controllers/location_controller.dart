@@ -3,17 +3,14 @@ import 'package:hive/hive.dart';
 
 class LocationController extends GetxController{
   var count = 0.obs;
+  var amount = RxDouble(0.0);
+  var km = 0.0.obs;
   increment() => count++;
-  var locationBox = Hive.box('users');
 
 
-  void addLocation(double lat, double long){
-
-    print('---------${lat}');
-    print(lat);
-    locationBox.put('lat', lat);
-    locationBox.put('long', long);
-    print("in box ${locationBox}");
+  void updateJobData (amount1, km1) {
+    amount = amount1;
+    km = km1;
   }
 
 }

@@ -131,8 +131,8 @@ class LocationServiceRepository {
     // LocalDatabase().printLocationById(1);
     // await LocalDatabase().addLocation(LocationModel(lat: js['latitude'], long: js['longitude']));
     // await apiController.addLocation(js['latitude'], js['latitude']);
-    print("lat: ${js['latitude']}");
-    print("long: ${js['latitude']}");
+    // print("lat: ${js['latitude']}");
+    // print("long: ${js['latitude']}");
   }
 
   double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
