@@ -1,6 +1,7 @@
 import 'dart:convert';
-import 'package:intl/intl.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:intl/intl.dart';
+// import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:http/http.dart' as http;
@@ -43,6 +44,7 @@ class _MyOrdersState extends State<MyOrders> {
 
 
     final connectivityResult = await (Connectivity().checkConnectivity());
+    // if (connectivityResult != ConnectivityResult.none) {
     if (connectivityResult != ConnectivityResult.none) {
       http.StreamedResponse response = await request.send();
       if (response.statusCode == 200) {

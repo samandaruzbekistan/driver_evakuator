@@ -38,8 +38,8 @@ class _BottomNavigationCustomState extends State<BottomNavigationCustom> {
           Get.offAll(HomeScreen());
         }
         else if(index == 1){
-          Get.to((MyApp3()));
-          // Get.to(MyOrders());
+          // Get.to((BgLocationService()));
+          Get.to(MyOrders());
         }
       },
       iconSize: 30,

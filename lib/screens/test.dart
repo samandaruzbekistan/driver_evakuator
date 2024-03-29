@@ -24,8 +24,10 @@ class _LocationPageState extends State<LocationPage> {
 
   void _startLocationUpdates() {
     _positionStream = Geolocator.getPositionStream(
-      distanceFilter: 10,
-      desiredAccuracy: LocationAccuracy.high,
+      locationSettings: AndroidSettings(
+          distanceFilter: 10,
+          accuracy: LocationAccuracy.best
+      ),
     ).listen((Position position) async {
       if (await Geolocator.isLocationServiceEnabled()) {
         _updateLocationData(position);

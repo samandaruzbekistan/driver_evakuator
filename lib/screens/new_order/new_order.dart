@@ -1,3 +1,4 @@
+// import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -115,8 +116,7 @@ class _NewOrderState extends State<NewOrder> {
                   setState(() {
                     _isLoading = true;
                   });
-                  final connectivityResult =
-                  await (Connectivity().checkConnectivity());
+                  final connectivityResult =await (Connectivity().checkConnectivity());
                   if(_descriptionController.text.length > 0){
                     if (connectivityResult != ConnectivityResult.none) {
                       final position = await _getCurrentLocation();

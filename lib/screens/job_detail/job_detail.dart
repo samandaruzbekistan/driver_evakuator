@@ -1,11 +1,16 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:ffi';
 import 'dart:isolate';
 import 'dart:math' show asin, atan2, cos, pi, sin, sqrt;
 import 'dart:ui';
 
+import 'package:driver_evakuator/background_locator/background_locator.dart';
+import 'package:driver_evakuator/background_locator/db.dart';
+import 'package:driver_evakuator/background_locator/models.dart';
 import 'package:driver_evakuator/constants.dart';
 import 'package:driver_evakuator/screens/home/home_screen.dart';
+import 'package:driver_evakuator/screens/my_orders/my_orders_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import 'package:get/get.dart';
@@ -13,10 +18,12 @@ import 'package:hive/hive.dart';
 import 'package:http/http.dart' as http;
 
 import 'package:maps_launcher/maps_launcher.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:rflutter_alert/rflutter_alert.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../location_callback_handler.dart';
+import '../../controllers/location_controller.dart';
+
 
 class JonDetail extends StatefulWidget {
   const JonDetail({Key? key, required this.id, required this.balans, required this.is_process,this.order_data})
@@ -30,6 +37,8 @@ class JonDetail extends StatefulWidget {
   @override
   State<JonDetail> createState() => _JonDetailState();
 }
+
+enum LocationStatus { UNKNOWN, INITIALIZED, RUNNING, STOPPED }
 
 class _JonDetailState extends State<JonDetail> with TickerProviderStateMixin {
   var box = Hive.box('users');
@@ -53,20 +62,14 @@ class _JonDetailState extends State<JonDetail> with TickerProviderStateMixin {
   double minKm = 0;
   double kmMoney = 0;
   double amount = 0;
-
-
-  late Isolate _isolate;
-  late ReceivePort _receivePort;
-  static const String _isolateName = "LocatorIsolate";
-  ReceivePort port = ReceivePort();
-
   late StreamSubscription<geo.Position> _positionStream;
+  late Timer _timer;
+  bool _permissionStatus = false;
 
   @override
   void initState() {
     super.initState();
-
-
+    _checkPermissionStatus();
     getOrder();
   }
 
@@ -94,6 +97,9 @@ class _JonDetailState extends State<JonDetail> with TickerProviderStateMixin {
     http.StreamedResponse response = await request.send();
 
     if (response.statusCode == 200) {
+      await LocationManager().stop();
+      await LocalDatabase().completeJob(_orderId);
+      _stopTimer();
       Get.to(HomeScreen());
     } else {
       _jobError(context);
@@ -102,66 +108,55 @@ class _JonDetailState extends State<JonDetail> with TickerProviderStateMixin {
 
 
 
-
-
-
-
   void startLocationUpdates() async {
-
-
-    setState(() {
-      _start = true;
-    });
-
-
-    _positionStream = geo.Geolocator.getPositionStream(
-      distanceFilter: 5,
-      desiredAccuracy: geo.LocationAccuracy.best,
-      // timeLimit: Duration(seconds: 5),
-      // forceAndroidLocationManager: true,
-    ).listen((geo.Position position) async {
-      if (await geo.Geolocator.isLocationServiceEnabled()) {
-        _currentPosition = position; // Initialize here
-        setState(() {
-          _counter++;
-        });
-        _updateLocationData(position);
-      } else {
-        _showGpsOffDialog();
+    var jobCount = await LocalDatabase().getPendingJobCount();
+    var r = await LocalDatabase().getJobById(_orderId);
+    if(jobCount == 0){
+      if(r == null){
+        await LocalDatabase().addJob(
+            JobModel(
+              job_id: _orderId,
+              minMoney: minMoney,
+              minKm: minKm,
+              kmMoney: kmMoney,
+              amount: minMoney,
+              totalDistanceKm: 0,
+              status: 'false',
+              lat: 0.0,
+              long: 0.0
+            ),
+          minMoney
+        );
       }
+      setState(() {
+        _start = true;
+      });
+      await LocationManager().start();
+    }
+    else if(r?['job_id'] == _orderId){
+      setState(() {
+        _start = true;
+      });
+      await LocationManager().start();
+    }
+    else{
+      _jobError2(context);
+    }
+  }
+
+  void _startTimer() {
+    // Start a timer that runs every second
+    _timer = Timer.periodic(Duration(seconds: 1), (timer) async {
+     await getDbData(_orderId);
     });
   }
 
-  void _updateLocationData(geo.Position newPosition) {
-    // if (_currentPosition == null || locations.isEmpty) return;
-    var distanceBetweenLastTwoLocations;
-    _currentPosition = newPosition;
-    locations.add(_currentPosition);
-    _previousPosition = locations.last;
-
-    if (locations.length > 1) {
-      _previousPosition = locations[locations.length - 2];
-
-      distanceBetweenLastTwoLocations = calculateDistance(_previousPosition.latitude, _previousPosition.longitude, _currentPosition.latitude, _currentPosition.longitude);
-
-      distanceBetweenLastTwoLocations;
-
-      if(_counter > 5 && distanceBetweenLastTwoLocations > 5){
-
-        setState(() {
-          _metr = distanceBetweenLastTwoLocations;
-          _currentPosition = newPosition;
-          locations.add(_currentPosition);
-          _totalDistance += distanceBetweenLastTwoLocations;
-          _totalDistanceKm = _totalDistance/1000;
-          if(_totalDistanceKm > minKm){
-            var km = _totalDistanceKm - minKm;
-            amount = minMoney + (km * kmMoney);
-          }
-        });
-
-      }
-    }
+  Future<void> getDbData(String id)async{
+    var row = await LocalDatabase().getJobById(id);
+    setState(() {
+      _totalDistanceKm = row?['totalDistanceKm'];
+      amount = row?['amount'];
+    });
   }
 
 
@@ -182,35 +177,43 @@ class _JonDetailState extends State<JonDetail> with TickerProviderStateMixin {
     return degree * (pi / 180);
   }
 
-  void _showGpsOffDialog() {
-    print("GPS is off.");
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          content: const Text('Make sure your GPS is on in Settings !'),
-          actions: <Widget>[
-            TextButton(
-              child: Text('OK'),
-              onPressed: () {
-                Navigator.of(context, rootNavigator: true).pop();
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
+  Future<void> _checkPermissionStatus() async {
+    final status = await Permission.locationAlways.status;
+    if (status.isGranted) {
+      setState(() {
+        _permissionStatus = true;
+      });
+    }
+    else{
+      print(status);
 
+      final status2 = await Permission.locationAlways.request();
+      if (status2.isGranted) {
+        setState(() {
+          _permissionStatus = true;
+        });
+      }
+    }
+  }
 
   getOrder() async {
     if(widget.is_process == 1){
+      var job = await LocalDatabase().getJobById(widget.order_data?['_id']);
+      print(job);
+      if(job != null){
+        await getDbData(widget.order_data?['_id']);
+        setState(() {
+          _start = true;
+        });
+        _startTimer();
+      }
       setState(() {
         _orderId = "${widget.order_data?['_id']}";
         minKm = double.parse(widget.order_data?['minkm']);
         kmMoney = double.parse(widget.order_data?['kmmoney']);
         minMoney = double.parse(widget.order_data?['minmoney']);
         getData = true;
+        // amount = double.parse(widget.order_data?['minmoney']);
         amount = double.parse(widget.order_data?['minmoney']);
         ordersData = widget.order_data!;
       });
@@ -256,6 +259,21 @@ class _JonDetailState extends State<JonDetail> with TickerProviderStateMixin {
       }
     }
   }
+
+  void _stopTimer() {
+    // Cancel the timer to stop it
+    _timer.cancel();
+  }
+
+  @override
+  void dispose() {
+    // Stop the timer when the screen is closed
+    _stopTimer();
+    super.dispose();
+  }
+  //
+  // @override
+  // void dispose() => super.dispose();
 
   @override
   Widget build(BuildContext context) {
@@ -414,36 +432,43 @@ class _JonDetailState extends State<JonDetail> with TickerProviderStateMixin {
               SizedBox(
                 height: h * 0.02,
               ),
-              Text(
-                "Summa: ${amount.toInt()}",
-                style: const TextStyle(color: Colors.deepPurple, fontSize: 20),
-              ),
-              Text(
+              _start ?
+                Text(
+                  "Summa: ${amount.toInt()}",
+                  style: const TextStyle(color: Colors.deepPurple, fontSize: 20),
+                )
+                : Container(),
+              _start ? Text(
                 "KM: ${double.parse(_totalDistanceKm.toStringAsFixed(2))}",
                 style: const TextStyle(color: Colors.deepPurple, fontSize: 20),
-              ),
+              )
+              : Container(),
               SizedBox(
                 height: h * 0.02,
               ),
               Container(
                 width: w * 0.8,
                 child: ElevatedButton(
-                  onPressed: () {
-                    // _start ? _completeOrderAlert(context, "${double.parse(_totalDistanceKm.toStringAsFixed(2))}","${amount.toInt()}", "${_orderId}") : startLocationUpdates();
-                    _start ? _completeOrderAlert(context, "${double.parse(_totalDistanceKm.toStringAsFixed(2))}","${amount.toInt()}", "${_orderId}") : startLocationUpdates();
+                  onPressed: () async {
+                    _permissionStatus
+                      ?  _start
+                            ? _completeOrderAlert(context, "${double.parse(_totalDistanceKm.toStringAsFixed(2))}","${amount.toInt()}", "${_orderId}")
+                            : startLocationUpdates()
+                      : await _checkPermissionStatus();
+
                   },
                   child: isLoading
                       ?  CircularProgressIndicator(
                       color: Colors.white)
                       :  Text(
-                    _start ? "Yakunlash" : "Ishni boshlash",
+                    _permissionStatus ? _start ? "Yakunlash" : "Ishni boshlash" : "Joylashuvga ruxsat bering",
                     style: TextStyle(color: Colors.white, fontSize: 20),
                   ),
                   style: ElevatedButton.styleFrom(
                     shape: StadiumBorder(),
                     // elevation: 20,
                     backgroundColor: _start ? Colors.red : kPrimaryColor,
-                    minimumSize: const Size.fromHeight(60),
+                    // minimumSize: Size.fromHeight(60),
                   ),
                 ),
               ),
@@ -457,7 +482,7 @@ class _JonDetailState extends State<JonDetail> with TickerProviderStateMixin {
     );
   }
 
-  _completeOrderAlert(context, String km, String amount, String id) {
+  _completeOrderAlert(context, String km, String amount, String id) async {
     Alert(
       context: context,
       type: AlertType.info,
@@ -491,6 +516,26 @@ _jobError(context) {
           style: TextStyle(color: Colors.white, fontSize: 14),
         ),
         onPressed: () => Get.offAll(HomeScreen()),
+        color: Colors.black,
+        radius: BorderRadius.circular(0.0),
+      ),
+    ],
+  ).show();
+}
+
+_jobError2(context) {
+  Alert(
+    context: context,
+    type: AlertType.info,
+    title: "Xatolik!",
+    desc: "Buyurtma tugallanmagan ish mavjud",
+    buttons: [
+      DialogButton(
+        child: Text(
+          "OK",
+          style: TextStyle(color: Colors.white, fontSize: 14),
+        ),
+        onPressed: () => Get.offAll(MyOrders()),
         color: Colors.black,
         radius: BorderRadius.circular(0.0),
       ),

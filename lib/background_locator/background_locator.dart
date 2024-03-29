@@ -39,7 +39,7 @@ class BackgroundLocator {
         Map<String, dynamic> initDataCallback = const {},
         void Function()? disposeCallback,
         bool autoStop = false,
-        AndroidSettings androidSettings = const AndroidSettings(),
+        AndroidSettings androidSettings = const AndroidSettings(distanceFilter: 10, accuracy: LocationAccuracy.HIGH),
         IOSSettings iosSettings = const IOSSettings()}) async {
     if (autoStop) {
       _widgetsBinding!.addObserver(AutoStopHandler());

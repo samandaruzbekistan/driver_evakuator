@@ -1,4 +1,4 @@
-import 'package:connectivity_plus/connectivity_plus.dart';
+// import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:driver_evakuator/screens/home/home_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -73,8 +73,7 @@ class _SignFormState extends State<SignForm> {
               minimumSize: const Size.fromHeight(60),
             ),
             onPressed: () async {
-              final connectivityResult =
-              await (Connectivity().checkConnectivity());
+              // final connectivityResult =await (Connectivity().checkConnectivity());
               if (phoneController.text.length == 9){
                 if (passwordController.text.length > 7){
                   setState(() {

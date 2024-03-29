@@ -1,6 +1,8 @@
 import 'dart:convert';
 
+// import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:driver_evakuator/background_locator/db.dart';
 import 'package:driver_evakuator/components/bottomNavigation.dart';
 import 'package:driver_evakuator/constants.dart';
 import 'package:driver_evakuator/firebase_api.dart';
@@ -12,6 +14,7 @@ import 'package:hive/hive.dart';
 import 'package:rflutter_alert/rflutter_alert.dart';
 import 'package:sliding_clipped_nav_bar/sliding_clipped_nav_bar.dart';
 import 'package:http/http.dart' as http;
+import '../../background_locator/background_locator.dart';
 import '../job_detail/job_detail.dart';
 import 'components/categories.dart';
 import 'components/discount_banner.dart';
@@ -37,7 +40,16 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     getBalans();
+    prepareDb();
     fetchData();
+  }
+
+  void prepareDb() async {
+    var count = await LocalDatabase().getPendingJobCount();
+    if(count == 0){
+      // await BackgroundLocator.unRegisterLocationUpdate();
+      await LocationManager().stop();
+    }
   }
 
   Future<void> getBalans() async {
@@ -83,6 +95,7 @@ class _HomeScreenState extends State<HomeScreen> {
     request.headers.addAll(headers);
 
     final connectivityResult = await (Connectivity().checkConnectivity());
+    // if (1 == 1) {
     if (connectivityResult != ConnectivityResult.none) {
       http.StreamedResponse response = await request.send();
       if (response.statusCode == 200) {
